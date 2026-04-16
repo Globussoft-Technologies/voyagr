@@ -1,0 +1,16 @@
+# Dev overrides — automatically loaded by `docker compose up`
+# Remove or rename this file in production.
+
+services:
+  app:
+    build:
+      target: builder
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+    volumes:
+      # Mount source code for hot reload
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"

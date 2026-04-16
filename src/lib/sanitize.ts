@@ -1,0 +1,18 @@
+import DOMPurify from "isomorphic-dompurify";
+
+export function sanitizeHtml(dirty: string): string {
+  return DOMPurify.sanitize(dirty, {
+    ALLOWED_TAGS: [
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr',
+      'ul', 'ol', 'li', 'a', 'strong', 'em', 'u', 's', 'sub', 'sup',
+      'blockquote', 'pre', 'code', 'img', 'figure', 'figcaption',
+      'table', 'thead', 'tbody', 'tr', 'th', 'td',
+      'div', 'span', 'mark',
+    ],
+    ALLOWED_ATTR: [
+      'href', 'target', 'rel', 'src', 'alt', 'width', 'height',
+      'class', 'style', 'colspan', 'rowspan', 'id',
+    ],
+    ALLOW_DATA_ATTR: false,
+  });
+}

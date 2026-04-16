@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.gitignore
+local.env
+.env
+.env.*
+!.env.docker
+*.md
+scripts/
+e2e-*
+deploy/
+.vscode
+.idea
+*.log

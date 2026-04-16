@@ -1,0 +1,48 @@
+# Voyagr — Multi-tenant Travel CMS
+# Usage: cp .env.docker .env && docker compose up -d
+
+services:
+  # ── Next.js application ──────────────────────────────────────────────────────
+  # Builds the Voyagr app from the Dockerfile and serves it on port 3000.
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      # Persist user-uploaded media across container restarts
+      - uploads:/app/public/uploads
+    restart: unless-stopped
+
+  # ── MySQL 8 database ─────────────────────────────────────────────────────────
+  # Stores all tenant data, users, posts, pages, media metadata, etc.
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: voyagr
+      MYSQL_USER: ${MYSQL_USER:-voyagr}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    volumes:
+      # Persist database files across container restarts
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  # Named volume for MySQL data persistence
+  mysql_data:
+  # Named volume for user-uploaded files
+  uploads:
