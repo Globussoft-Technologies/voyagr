@@ -49,14 +49,33 @@ Voyagr is self-hostable and ships with Docker Compose, PM2 process management, a
 - Nested menu items via parent-child relationships
 - Public navigation component rendered on tenant sites
 
+### User Experience
+
+- 5-step onboarding wizard for new tenants (company info, theme selection, navigation setup, first page, launch)
+- Password reset via email (forgot password flow with secure tokens)
+- Email verification on sign-up
+- Delete confirmation modals on all destructive actions
+- Draft preview (preview unpublished pages/posts before publishing)
+- Full-text search on tenant sites (pages + posts)
+- Mobile-responsive across all pages (dashboard, tenant sites, onboarding)
+
+### Analytics
+
+- Page view tracking via lightweight `navigator.sendBeacon`
+- Analytics dashboard with views per day, top pages, top referrers
+- Configurable time periods (7d / 30d / 90d)
+
 ### Security
 
 - Auth.js v5 with JWT session strategy
+- Password reset with expiring tokens (1 hour)
+- Email verification with expiring tokens (24 hours)
 - XSS sanitization via DOMPurify on all rendered HTML
-- Rate limiting on public endpoints (sign-up, newsletter subscribe)
+- Rate limiting on public endpoints (sign-up, newsletter subscribe, analytics tracking)
 - CSRF protection via allowed origins configuration
 - Bcrypt password hashing (12 rounds)
 - Input validation with Zod schemas
+- SMTP connection validation before sending newsletters
 
 ### Infrastructure
 
@@ -80,6 +99,7 @@ Voyagr is self-hostable and ships with Docker Compose, PM2 process management, a
 | Email | Nodemailer (SMTP) |
 | Validation | Zod |
 | Sanitization | DOMPurify / isomorphic-dompurify |
+| Testing | Playwright (35 E2E tests) |
 | Runtime | Node.js 24 |
 | Process Manager | PM2 |
 | Reverse Proxy | nginx |
@@ -98,7 +118,7 @@ Voyagr is self-hostable and ships with Docker Compose, PM2 process management, a
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/voyagr.git
+git clone https://github.com/Globussoft-Technologies/voyagr.git
 cd voyagr
 
 # Create environment file
@@ -238,6 +258,9 @@ Voyagr uses a relational multi-tenant schema where every content model includes 
 | `MenuItem` | Navigation entries with position ordering and parent-child nesting |
 | `Subscriber` | Newsletter subscribers with email and status |
 | `Newsletter` | Email campaigns with subject, HTML content, send status, and sent count |
+| `PasswordResetToken` | Secure tokens for password reset (1-hour expiry) |
+| `EmailVerificationToken` | Secure tokens for email verification (24-hour expiry) |
+| `PageView` | Page view analytics (path, referrer, user agent, timestamp) |
 
 ## Theme System
 
@@ -280,6 +303,9 @@ All API routes are under `/api/` and require authentication unless noted. Tenant
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/auth/sign-up` | Register a new user and create a tenant |
+| POST | `/api/auth/forgot-password` | Send password reset email |
+| POST | `/api/auth/reset-password` | Reset password with token |
+| GET | `/api/auth/verify-email` | Verify email address with token |
 
 ### Pages
 
@@ -349,6 +375,32 @@ All API routes are under `/api/` and require authentication unless noted. Tenant
 | GET | `/api/tenant/settings` | Get tenant settings |
 | PUT | `/api/tenant/settings` | Update tenant settings (theme, domain, etc.) |
 
+### Search
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/search?q=&domain=` | Search pages and posts (public) |
+
+### Analytics
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/analytics/track` | Track a page view (public) |
+| GET | `/api/analytics/stats` | Get analytics dashboard data |
+
+### Preview
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/preview?type=&id=` | Preview unpublished content |
+
+### System
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check (DB probe, uptime, version) |
+| POST | `/api/newsletter/test-email` | Send a test email to verify SMTP |
+
 ## Environment Variables
 
 | Variable | Required | Description |
@@ -376,7 +428,7 @@ curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 sudo apt install -y nodejs
 
 # 2. Clone and install
-git clone https://github.com/your-org/voyagr.git
+git clone https://github.com/Globussoft-Technologies/voyagr.git
 cd voyagr
 npm ci
 
@@ -461,6 +513,23 @@ npm run seed:demo
 ```
 
 This creates demo pages, blog posts with categories and tags, and navigation menu items -- giving you a fully populated tenant to explore the CMS features immediately.
+
+## Testing
+
+Voyagr includes a comprehensive E2E test suite with 35 Playwright tests:
+
+```bash
+# Run the full test suite
+python scripts/e2e_full.py
+
+# Run the quick smoke test
+python scripts/e2e_smoke.py
+
+# Run with visible browser
+python scripts/e2e_full.py --headed
+```
+
+Tests cover: public pages, API endpoints, auth flows (sign-up, sign-in, onboarding), dashboard CRUD (pages, posts, media, newsletter, team, settings, analytics), tenant site rendering, search, and cleanup.
 
 ## Contributing
 
